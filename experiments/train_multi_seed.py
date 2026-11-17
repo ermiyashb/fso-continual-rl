@@ -1,119 +1,297 @@
+"""
+Multi-algorithm learning-curve comparison on FSOEnv (SAC / PPO / TD3 + baselines).
+
+Usage:
+    python multi_algo_comparison.py                      # train + plot
+    python multi_algo_comparison.py --episodes 1000 --seeds 5
+    python multi_algo_comparison.py --plot-only          # re-plot from saved data (no retraining)
+"""
+import argparse
+import os
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+import gymnasium as gym
 import numpy as np
+import torch
 import matplotlib.pyplot as plt
-from stable_baselines3 import SAC, PPO
+from gymnasium import spaces
+from stable_baselines3 import SAC, PPO, TD3
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.noise import NormalActionNoise
 from environment.fso_env import FSOEnv
 
 
-class ProgressCallback(BaseCallback):
-    def __init__(self, total_timesteps, algo_name, seed_idx, n_seeds):
+class NormalizeObs(gym.ObservationWrapper):
+    """Map the physical observation into [-1, 1] using the env bounds.
+
+    Episode returns stay in the raw reward, because Monitor is underneath
+    this wrapper.
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+        self._low = self.env.observation_space.low.astype(np.float32)
+        self._high = self.env.observation_space.high.astype(np.float32)
+        self.observation_space = spaces.Box(
+            low=-np.ones_like(self._low),
+            high=np.ones_like(self._low),
+            dtype=np.float32,
+        )
+
+    def observation(self, obs):
+        scaled = 2.0 * (np.asarray(obs, dtype=np.float32) - self._low) / (self._high - self._low) - 1.0
+        return np.clip(scaled, -1.0, 1.0).astype(np.float32)
+
+MAX_STEPS = 80
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+DATA_FILE = RESULTS_DIR / "multi_algo_data.npz"
+FIG_FILE = RESULTS_DIR / "multi_algo_comparison.png"
+
+
+# ----------------------------------------------------------------------------
+# Training
+# ----------------------------------------------------------------------------
+class EpisodeCollector(BaseCallback):
+    """Collects the true per-episode return (from Monitor) and stops after n_episodes."""
+
+    def __init__(self, n_episodes, tag):
         super().__init__()
-        self.total_timesteps = total_timesteps
-        self.algo_name = algo_name
-        self.seed_idx = seed_idx
-        self.n_seeds = n_seeds
-        self.episode_rewards = []
-        self.current_reward = 0.0
-        self.last_print = 0
+        self.n_episodes = n_episodes
+        self.tag = tag
+        self.rewards = []
+        self._last_pct = -1
 
     def _on_step(self) -> bool:
-        reward = self.locals["rewards"][0]
-        self.current_reward += reward
-        if self.locals["dones"][0]:
-            self.episode_rewards.append(self.current_reward)
-            self.current_reward = 0.0
-
-        progress = int(100 * self.num_timesteps / self.total_timesteps)
-        if progress > self.last_print:
-            self.last_print = progress
-            print(f"    [{self.algo_name} {self.seed_idx}/{self.n_seeds}] {progress}% "
-                  f"| ep={len(self.episode_rewards)}", flush=True)
-        return True
+        for info in self.locals["infos"]:
+            ep = info.get("episode")
+            if ep is not None:
+                self.rewards.append(float(ep["r"]))
+        pct = int(100 * len(self.rewards) / self.n_episodes)
+        if pct // 10 > self._last_pct // 10:
+            self._last_pct = pct
+            print(f"    [{self.tag}] {min(pct, 100)}%  ({len(self.rewards)} episodes)", flush=True)
+        return len(self.rewards) < self.n_episodes
 
 
-def train_one_run(algo_class, algo_name, seed, seed_idx, n_seeds, total_timesteps=6000):
-    env = Monitor(FSOEnv(max_steps=80))
-    model = algo_class("MlpPolicy", env, learning_rate=3e-4, verbose=0, seed=seed)
-    cb = ProgressCallback(total_timesteps, algo_name, seed_idx, n_seeds)
-    model.learn(total_timesteps=total_timesteps, callback=cb, progress_bar=False)
-    return np.array(cb.episode_rewards)
+def make_model(name, env, seed, device="cpu", fast=False):
+    common = dict(policy="MlpPolicy", env=env, seed=seed, verbose=0, device=device)
+    # --fast: 4x fewer gradient updates for SAC/TD3 (big speedup, slightly less sample-efficient)
+    off_policy = dict(train_freq=4, gradient_steps=1) if fast else {}
+    if name == "PPO":
+        # n_steps is a multiple of the 80-step episode. The Gaussian mean is
+        # then placed at the center of the action box in train_one_run.
+        return PPO(
+            learning_rate=2.5e-4,
+            n_steps=480,
+            batch_size=96,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.15,
+            ent_coef=0.0,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            policy_kwargs=dict(
+                net_arch=dict(pi=[128, 128], vf=[128, 128]),
+                log_std_init=-2.0,
+            ),
+            **common,
+        )
+    if name == "SAC":
+        return SAC(learning_rate=3e-4, learning_starts=500, batch_size=256, **off_policy, **common)
+    if name == "TD3":
+        n_act = env.action_space.shape[0]
+        # TD3 is deterministic: without exploration noise it barely learns
+        noise = NormalActionNoise(mean=np.zeros(n_act), sigma=0.1 * np.ones(n_act))
+        return TD3(learning_rate=3e-4, learning_starts=500, batch_size=256, action_noise=noise,
+                   **off_policy, **common)
+    raise ValueError(name)
 
 
-def evaluate_fixed(n_episodes=100, seed=0):
-    """Fixed policy: constant power and beam."""
-    env = FSOEnv(max_steps=80)
-    rewards = []
+def train_one_run(name, seed, n_episodes, tag, device="cpu", fast=False):
+    # one thread per process: avoids CPU oversubscription when many runs go in parallel
+    torch.set_num_threads(1)
+    env = NormalizeObs(Monitor(FSOEnv(max_steps=MAX_STEPS)))
+    model = make_model(name, env, seed, device=device, fast=fast)
+    if name == "PPO":
+        # PPO does not squash actions. A zero mean is clipped to the low
+        # bound, so the policy starts at minimum power. Put the mean at the
+        # center of each action and keep the noise small relative to that range.
+        low = torch.as_tensor(env.action_space.low, dtype=torch.float32)
+        high = torch.as_tensor(env.action_space.high, dtype=torch.float32)
+        with torch.no_grad():
+            model.policy.action_net.weight.zero_()
+            model.policy.action_net.bias.copy_((low + high) / 2.0)
+            model.policy.log_std.copy_(torch.log(0.08 * (high - low)))
+    cb = EpisodeCollector(n_episodes, tag)
+    model.learn(total_timesteps=n_episodes * MAX_STEPS * 2, callback=cb, progress_bar=False)
+    return np.array(cb.rewards[:n_episodes])
+
+
+def _job(name, i, seed, n_episodes, tag, device, fast):
+    return name, i, train_one_run(name, seed, n_episodes, tag, device, fast)
+
+
+# ----------------------------------------------------------------------------
+# Baselines (one value per episode, so they look like curves too)
+# ----------------------------------------------------------------------------
+def evaluate_policy(policy_fn, n_episodes, seed):
+    env = FSOEnv(max_steps=MAX_STEPS)
+    out = []
     for ep in range(n_episodes):
         obs, _ = env.reset(seed=seed + ep)
-        done = False
-        ep_rew = 0.0
+        done, total = False, 0.0
         while not done:
-            action = np.array([10.0, 0.02], dtype=np.float32)
-            obs, r, term, trunc, _ = env.step(action)
-            ep_rew += r
+            obs, r, term, trunc, _ = env.step(policy_fn(obs, env))
+            total += r
             done = term or trunc
-        rewards.append(ep_rew)
-    return np.array(rewards)
+        out.append(total)
+    return np.array(out)
 
 
-def main():
-    n_seeds = 10
-    seeds = list(range(42, 42 + n_seeds))
-    total_timesteps = 6000
+# ----------------------------------------------------------------------------
+# Plotting
+# ----------------------------------------------------------------------------
+def smooth(x, w):
+    """Centered Gaussian smooth. Reflect padding keeps the curve the same length."""
+    x = np.asarray(x, dtype=float)
+    if w <= 1 or len(x) < 3:
+        return x
+    sigma = max(w / 4.0, 1.0)
+    radius = int(w)
+    t = np.arange(-radius, radius + 1, dtype=float)
+    kernel = np.exp(-0.5 * (t / sigma) ** 2)
+    kernel /= kernel.sum()
+    padded = np.pad(x, radius, mode="reflect")
+    return np.convolve(padded, kernel, mode="valid")
 
-    results = {"SAC": [], "PPO": []}
 
-    for name, algo in [("SAC", SAC), ("PPO", PPO)]:
-        print(f"\n=== Training {name} ({n_seeds} seeds) ===")
-        for i, seed in enumerate(seeds):
-            print(f"  Seed {i+1}/{n_seeds}")
-            rewards = train_one_run(algo, name, seed, i+1, n_seeds, total_timesteps)
-            if len(rewards) > 0:
-                results[name].append(rewards)
-            print(f"  Done | episodes={len(rewards)}\n")
+STYLE = {
+    "SAC": dict(color="#215CAF", ls="-", lw=2.8),
+    "PPO": dict(color="#6C3483", ls="-", lw=2.8),
+    "TD3": dict(color="#C0392B", ls="-", lw=2.8),
+    "Fixed Policy": dict(color="#E67E22", ls="--", lw=2.4),
+    "Random Policy": dict(color="#1E8449", ls=":", lw=2.4),
+}
 
-    # Fixed policy (no training needed)
-    print("=== Evaluating Fixed Policy ===")
-    fixed_rewards = evaluate_fixed(n_episodes=100, seed=999)
-    print(f"Fixed Policy mean: {fixed_rewards.mean():.2f}")
 
-    # Align lengths
-    min_len = min(len(r) for runs in results.values() for r in runs)
-    print(f"\nPlotting up to {min_len} episodes")
+def make_plot(data, window, n_seeds):
+    plt.rcParams.update({
+        "font.size": 12,
+        "axes.labelsize": 13,
+        "axes.titlesize": 14,
+        "legend.fontsize": 11,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+        "axes.linewidth": 0.8,
+    })
+    fig, ax = plt.subplots(figsize=(9.2, 5.4))
 
-    plt.figure(figsize=(10, 6))
-    colors = {"SAC": "C0", "PPO": "C1"}
+    # Baselines first so the learning curves are drawn on top.
+    series = [
+        ("Random Policy", "random", 2),
+        ("Fixed Policy", "fixed", 2),
+        ("PPO", "PPO", 3),
+        ("SAC", "SAC", 3),
+        ("TD3", "TD3", 3),
+    ]
+    for name, key, z in series:
+        if key not in data:
+            continue
+        values = data[key]
+        if values.ndim == 2:
+            curve = np.mean([smooth(run, window) for run in values], axis=0)
+        else:
+            curve = smooth(values, window)
+        st = STYLE[name]
+        ax.plot(
+            np.arange(len(curve)),
+            curve,
+            label=name,
+            color=st["color"],
+            ls=st["ls"],
+            lw=st["lw"],
+            zorder=z,
+            solid_capstyle="round",
+        )
 
-    for name in ["SAC", "PPO"]:
-        data = np.array([r[:min_len] for r in results[name]])
-        mean = data.mean(axis=0)
-        std = data.std(axis=0)
-        ep = np.arange(min_len)
-        plt.plot(ep, mean, label=name, color=colors[name], linewidth=2)
-        plt.fill_between(ep, mean - std, mean + std, alpha=0.2, color=colors[name])
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Total Reward per Episode")
+    ax.set_title(f"FSO Link Control  ·  mean over {n_seeds} seeds")
+    ax.grid(True, linestyle="--", linewidth=0.6, alpha=0.35, zorder=0)
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        frameon=True,
+        framealpha=1.0,
+        edgecolor="#DDDDDD",
+        borderpad=0.7,
+    )
+    ax.margins(x=0.01)
+    fig.tight_layout()
 
-    # Fixed policy as horizontal line (mean ± std)
-    fixed_mean = fixed_rewards.mean()
-    fixed_std = fixed_rewards.std()
-    plt.axhline(fixed_mean, color="C2", linestyle="--", linewidth=2, label="Fixed Policy")
-    plt.fill_between([0, min_len], fixed_mean - fixed_std, fixed_mean + fixed_std,
-                     alpha=0.15, color="C2")
-
-    plt.xlabel("Episode")
-    plt.ylabel("Total Reward")
-    plt.title(f"Mean Reward ± Std ({n_seeds} seeds)")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig("results/multi_seed_comparison.png", dpi=150)
-    print("Saved: results/multi_seed_comparison.png")
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIG_FILE, dpi=300, bbox_inches="tight")
+    print(f"Saved: {FIG_FILE}")
     plt.show()
+
+
+# ----------------------------------------------------------------------------
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--episodes", type=int, default=600)
+    ap.add_argument("--seeds", type=int, default=3)
+    ap.add_argument("--window", type=int, default=50, help="Gaussian smoothing width in episodes")
+    ap.add_argument("--plot-only", action="store_true")
+    ap.add_argument("--workers", type=int, default=0, help="parallel processes (0 = auto)")
+    ap.add_argument("--device", default="cpu", help="cpu (recommended) or cuda")
+    ap.add_argument("--fast", action="store_true", help="fewer SAC/TD3 gradient updates -> much faster")
+    args = ap.parse_args()
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    if args.plot_only:
+        d = np.load(DATA_FILE)
+        data = {k: d[k] for k in d.files}
+        make_plot(data, args.window, data["SAC"].shape[0])
+        return
+
+    seeds = list(range(100, 100 + args.seeds))
+    data = {}
+    algos = ["SAC", "PPO", "TD3"]
+    jobs = [(n, i, s) for n in algos for i, s in enumerate(seeds)]
+    workers = args.workers or max(1, min(len(jobs), (os.cpu_count() or 2) - 1))
+    print(f"Running {len(jobs)} training runs on {workers} parallel processes (device={args.device})")
+
+    collected = {n: [None] * args.seeds for n in algos}
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        futs = [pool.submit(_job, n, i, s, args.episodes, f"{n} seed {i+1}/{args.seeds}",
+                            args.device, args.fast) for n, i, s in jobs]
+        for f in as_completed(futs):
+            n, i, rewards = f.result()
+            collected[n][i] = rewards
+            print(f"  finished {n} seed {i+1}/{args.seeds}", flush=True)
+    for n in algos:
+        data[n] = np.array(collected[n])
+
+    print("\n=== Baselines ===")
+    fixed_action = np.array([10.0, 0.02], dtype=np.float32)
+    data["fixed"] = evaluate_policy(lambda obs, env: fixed_action, args.episodes, seed=999)
+    data["random"] = evaluate_policy(lambda obs, env: env.action_space.sample(), args.episodes, seed=888)
+    print(f"Fixed mean:  {data['fixed'].mean():.2f}")
+    print(f"Random mean: {data['random'].mean():.2f}")
+    for n in ["SAC", "PPO", "TD3"]:
+        print(f"{n} last-50-episode mean: {data[n][:, -50:].mean():.2f}")
+
+    np.savez(DATA_FILE, **data)  # so you can re-plot without retraining
+    make_plot(data, args.window, args.seeds)
 
 
 if __name__ == "__main__":
