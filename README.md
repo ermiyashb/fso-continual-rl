@@ -48,18 +48,21 @@ a Gaussian smooth (width 50) of the mean across the three seeds. They are not
 a separate greedy evaluation after training. The fixed and random curves are
 separate 600-episode rollouts (seeds 999 and 888).
 
-## Logged last-50-episode means
+## Logged training-episode returns
 
-Computed from the committed `results/multi_algo_data.npz` as the mean of the
-last 50 episodes, averaged over the stored seeds. No other summary was used.
+Computed from the current `results/multi_algo_data.npz`, the latest
+600-episode run. SAC, PPO, and TD3 were each trained on seeds 100, 101, and
+102; the learner figures are the mean across those three seeds. Fixed and
+random are the single stored 600-episode rollouts. These are the returns
+collected during training, not a later greedy evaluation.
 
-| Policy | Last 50 episodes |
-|---|---:|
-| TD3 | 78.76 |
-| SAC | 73.64 |
-| PPO | 73.48 |
-| Fixed `[10 dBm, 0.02 m]` | 68.31 |
-| Random | 63.19 |
+| Policy | Last 50 episodes | All episodes |
+|---|---:|---:|
+| TD3 | 78.76 | 82.53 |
+| SAC | 73.64 | 75.63 |
+| PPO | 73.48 | 72.93 |
+| Fixed `[10 dBm, 0.02 m]` | 68.31 | 70.16 |
+| Random | 63.19 | 62.74 |
 
-An earlier 400-episode array, in which the TD3 mean was about 87, was
-overwritten by this 600-episode file. It is not in the repository.
+TD3 last-50 means on the three seeds are 71.42, 83.31, and 81.56. The
+array shape is `(3, 600)` for each learner and `(600,)` for fixed and random.
