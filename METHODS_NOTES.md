@@ -85,10 +85,10 @@ Last 50 episodes, mean over the stored runs:
 | SAC | 73.63630902 |
 | PPO | 73.48153086 |
 | Fixed | 68.3145986346532 |
-| Random | 63.29205688020732 |
+| Random | 63.19340231718413 |
 
 Mean over every stored episode: TD3 82.52695307, SAC 75.62813292888889,
-PPO 72.92858565166667, fixed 70.16166920216642, random 62.72875264550862.
+PPO 72.92858565166667, fixed 70.16166920216642, random 62.73962157034635.
 
 TD3 last-50 means by seed are 71.4156208, 83.31231168, and 81.56262292.
 The seed-averaged TD3 curve reaches 89.647805 at one episode index. That

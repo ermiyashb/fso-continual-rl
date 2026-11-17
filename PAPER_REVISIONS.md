@@ -6,7 +6,7 @@ The logged curves are training-episode returns, averaged over 3 seeds (100, 101,
 
 ## Abstract
 
-We study continuous control of a 3 km free-space optical link, in which the agent sets transmit power and launch beam waist while visibility and the refractive-index structure constant drift within each 80-step episode. SAC, PPO, and TD3 are trained for 600 episodes on three seeds with Stable-Baselines3. Reported values are training-episode returns, averaged over those seeds, not a held-out greedy test. Over the last 50 episodes the means are 78.76 for TD3, 73.64 for SAC, and 73.48 for PPO, compared with 68.31 for a fixed action of 10 dBm and 0.02 m and 63.29 for a uniform random policy. TD3 is the highest of the three learners. The margin over the fixed policy is modest, about ten return points, and SAC and PPO finish only a few points above that baseline.
+We study continuous control of a 3 km free-space optical link, in which the agent sets transmit power and launch beam waist while visibility and the refractive-index structure constant drift within each 80-step episode. SAC, PPO, and TD3 are trained for 600 episodes on three seeds with Stable-Baselines3. Reported values are training-episode returns, averaged over those seeds, not a held-out greedy test. Over the last 50 episodes the means are 78.76 for TD3, 73.64 for SAC, and 73.48 for PPO, compared with 68.31 for a fixed action of 10 dBm and 0.02 m and 63.19 for a uniform random policy. TD3 is the highest of the three learners. The margin over the fixed policy is modest, about ten return points, and SAC and PPO finish only a few points above that baseline.
 
 ## 3. Methods
 
@@ -44,7 +44,7 @@ Mean training-episode return over the last 50 episodes. Learning algorithms are 
 | SAC | 73.64 |
 | PPO | 73.48 |
 | Fixed (10 dBm, 0.02 m) | 68.31 |
-| Random | 63.29 |
+| Random | 63.19 |
 
 ## 4.1 Learning comparison
 
@@ -52,4 +52,4 @@ Table 1 is computed from the 600-episode log. All three learners finish above th
 
 ## Conclusion
 
-On the surviving 600-episode log, TD3 obtains the highest last-50 training return (78.76), followed by SAC (73.64) and PPO (73.48). All three exceed the fixed policy (68.31) and the random policy (63.29). The improvement over the fixed action is real but modest, and it is measured on training episodes averaged over three seeds. The result does not by itself establish a large or uniform advantage for any one algorithm.
+On the surviving 600-episode log, TD3 obtains the highest last-50 training return (78.76), followed by SAC (73.64) and PPO (73.48). All three exceed the fixed policy (68.31) and the random policy (63.19). The improvement over the fixed action is real but modest, and it is measured on training episodes averaged over three seeds. The result does not by itself establish a large or uniform advantage for any one algorithm.

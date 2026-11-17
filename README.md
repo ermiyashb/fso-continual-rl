@@ -59,7 +59,7 @@ last 50 episodes, averaged over the stored seeds. No other summary was used.
 | SAC | 73.64 |
 | PPO | 73.48 |
 | Fixed `[10 dBm, 0.02 m]` | 68.31 |
-| Random | 63.29 |
+| Random | 63.19 |
 
 An earlier 400-episode array, in which the TD3 mean was about 87, was
 overwritten by this 600-episode file. It is not in the repository.
