@@ -90,7 +90,8 @@ class FSOEnv(gym.Env):
         # quality is still climbing.
         quality = float(np.clip((snr_db - 1.0) / 11.0, 0.0, 1.0))
         power_cost = 0.16 * (tx_power_dbm - 4.0) / 12.0
-        # 80 perfect, zero-cost steps sum to +100.
+        # The committed comparison used max_steps=80, so this factor is 1.25
+        # and 80 perfect, zero-cost steps sum to +100.
         return float((quality - power_cost) * (100.0 / self.max_steps))
 
     def _apply_link(self, action, add_noise: bool):

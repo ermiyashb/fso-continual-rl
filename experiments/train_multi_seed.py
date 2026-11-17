@@ -1,10 +1,12 @@
 """
 Multi-algorithm learning-curve comparison on FSOEnv (SAC / PPO / TD3 + baselines).
 
-Usage:
-    python multi_algo_comparison.py                      # train + plot
-    python multi_algo_comparison.py --episodes 1000 --seeds 5
-    python multi_algo_comparison.py --plot-only          # re-plot from saved data (no retraining)
+The logged paper figure was produced without --fast, with the defaults
+--episodes 600 --seeds 3 (seeds 100, 101, 102). See METHODS_NOTES.md.
+
+Usage (from the repository root):
+    python experiments/train_multi_seed.py
+    python experiments/train_multi_seed.py --plot-only
 """
 import argparse
 import os
