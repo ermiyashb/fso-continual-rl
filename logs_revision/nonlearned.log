@@ -1,0 +1,20 @@
+best fixed (validation): (np.float64(13.5), np.float64(0.035), 86.12186066618361)
+tracking po_k0 ('po_k0', np.float64(0.25), 89.94434992867919)
+tracking po_k1 ('po_k1', np.float64(0.5), 89.60526031491203)
+tracking po_k3 ('po_k3', np.float64(0.75), 88.81856532697311)
+fixed_10_0.02                return  69.28  outage 0.0115  P 10.00  w0 0.0200
+fixed_grid_best              return  86.17  outage 0.0000  P 13.50  w0 0.0350
+rule_w0.02                   return  82.99  outage 0.0000  P 12.72  w0 0.0200
+rule_w0.035                  return  85.68  outage 0.0000  P 12.51  w0 0.0350
+oracle_minpower              return  90.23  outage 0.0000  P 10.92  w0 0.0350
+oracle_rewardmax             return  90.46  outage 0.0000  P 11.08  w0 0.0350
+po_k0_snr_rule_w0.02         return  77.12  outage 0.0053  P 11.49  w0 0.0200
+po_k0_snr_rule_w0.035        return  82.87  outage 0.0001  P 10.97  w0 0.0350
+po_k0_gain_tracking          return  90.04  outage 0.0000  P 11.19  w0 0.0350
+po_k1_snr_rule_w0.02         return  77.19  outage 0.0050  P 11.51  w0 0.0200
+po_k1_snr_rule_w0.035        return  82.90  outage 0.0001  P 10.99  w0 0.0350
+po_k1_gain_tracking          return  89.71  outage 0.0000  P 11.46  w0 0.0350
+po_k3_snr_rule_w0.02         return  77.26  outage 0.0054  P 11.54  w0 0.0200
+po_k3_snr_rule_w0.035        return  82.93  outage 0.0001  P 11.04  w0 0.0350
+po_k3_gain_tracking          return  88.93  outage 0.0000  P 11.75  w0 0.0350
+saved /workspace/fso-continual-rl/results/revision/nonlearned.npz

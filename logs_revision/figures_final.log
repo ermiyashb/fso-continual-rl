@@ -1,0 +1,37 @@
+saved /workspace/fso-continual-rl/results/revision/figures/fig_rev_main.png
+saved /workspace/fso-continual-rl/results/revision/figures/fig_rev_curves.png
+saved /workspace/fso-continual-rl/results/revision/figures/fig_rev_po.png
+saved /workspace/fso-continual-rl/results/revision/figures/fig_rev_adapt.png
+{
+ "val_reference": {
+  "Rule-based": 83.3788061839508,
+  "Best fixed": 86.44987937795273,
+  "Oracle": 90.72365218811805
+ },
+ "adapt_episode": {
+  "SAC best-val (seed 100)": {
+   "ret": 87.32726520061298,
+   "mean_tx": 13.114872312545776,
+   "mean_w0_cm": 2.686827841680497,
+   "corr_tx_vis": -0.7818487359244942
+  },
+  "SAC final (seed 100)": {
+   "ret": 74.43526258515374,
+   "mean_tx": 12.86013765335083,
+   "mean_w0_cm": 2.56543449126184,
+   "corr_tx_vis": 0.5016507340815997
+  },
+  "Rule-based": {
+   "ret": 81.81688052351001,
+   "mean_tx": 13.625,
+   "mean_w0_cm": 1.9999999552965164,
+   "corr_tx_vis": -0.7471516847861074
+  },
+  "Oracle": {
+   "ret": 88.85183959994731,
+   "mean_tx": 12.241750019788743,
+   "mean_w0_cm": 3.500000014901161,
+   "corr_tx_vis": -0.6501362052473435
+  }
+ }
+}

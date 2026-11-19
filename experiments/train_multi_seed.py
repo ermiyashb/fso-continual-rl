@@ -478,7 +478,7 @@ def main():
                     help="output prefix (strong default: results/multi_algo_strong)")
     ap.add_argument("--plot-only", action="store_true", help="redraw figures/summary from an existing npz")
     ap.add_argument("--save-models", action="store_true", help="save final models next to the npz, in models_<prefix name>/")
-    ap.add_argument("--workers", type=int, default=0, help="parallel processes (0 = auto)")
+    ap.add_argument("--workers", type=int, default=0, help="parallel processes (0 = auto: about a third of CPU cores, to keep the machine usable)")
     ap.add_argument("--device", default="cpu", help="cpu (recommended) or cuda")
     ap.add_argument("--fast", action="store_true", help="fewer SAC/TD3 gradient updates -> much faster")
     ap.add_argument("--show", action="store_true", help="also open the figures in a window")
@@ -518,7 +518,7 @@ def main():
         seeds = list(range(args.seed_base, args.seed_base + n_seeds))
         cfg = dict(seeds=n_seeds, episodes=episodes, device=args.device, fast=args.fast,
                    eval_episodes=eval_episodes, eval_seed_base=args.eval_seed_base, save_models_dir=None)
-        workers = args.workers or max(1, min(len(seeds) * len(args.algos), (os.cpu_count() or 2) - 1))
+        workers = args.workers or max(1, min(len(seeds) * len(args.algos), max(1, (os.cpu_count() or 2) // 3)))
         train, _ = run_training(cfg, seeds, args.algos, workers)
         data = {n: np.array(train[n]) for n in args.algos}
         print("\n=== Baselines (legacy rollouts) ===")
@@ -548,7 +548,7 @@ def main():
     cfg = dict(seeds=n_seeds, episodes=episodes, device=args.device, fast=args.fast,
                eval_episodes=eval_episodes, eval_seed_base=args.eval_seed_base,
                save_models_dir=str(models_dir) if models_dir else None)
-    workers = args.workers or max(1, min(len(seeds) * len(args.algos), (os.cpu_count() or 2) - 1))
+    workers = args.workers or max(1, min(len(seeds) * len(args.algos), max(1, (os.cpu_count() or 2) // 3)))
     seed_everything(args.seed_base)
     train, evals = run_training(cfg, seeds, args.algos, workers)
 

@@ -1,0 +1,289 @@
+{
+"orig_TD3": {
+"orig_TD3": [
+72.13,
+75.11,
+0.1318,
+11.36,
+null
+]
+},
+"orig_SAC": {
+"orig_SAC": [
+76.26,
+75.96,
+0.0703,
+11.52,
+null
+]
+},
+"orig_PPO": {
+"orig_PPO": [
+72.33,
+75.89,
+0.0412,
+10.27,
+null
+]
+},
+"orig_fixed": {
+"orig_fixed": [
+69.28,
+69.41,
+0.0115,
+10.0,
+null
+]
+},
+"orig_random": {
+"orig_random": [
+62.07,
+62.13,
+0.2323,
+10.01,
+null
+]
+},
+"orig_rule_based": {
+"orig_rule_based": [
+82.99,
+83.07,
+0.0,
+12.72,
+null
+]
+},
+"fixed_10_0.02": {
+"fixed_10_0.02": [
+69.28,
+69.41,
+0.0115,
+10.0,
+2.0
+]
+},
+"fixed_grid_best": {
+"fixed_grid_best": [
+86.17,
+86.13,
+0.0,
+13.5,
+3.5
+]
+},
+"oracle_minpower": {
+"oracle_minpower": [
+90.23,
+90.26,
+0.0,
+10.92,
+3.5
+]
+},
+"oracle_rewardmax": {
+"oracle_rewardmax": [
+90.46,
+90.49,
+0.0,
+11.08,
+3.5
+]
+},
+"po_k0_gain_tracking": {
+"po_k0_gain_tracking": [
+90.04,
+90.08,
+0.0,
+11.19,
+3.5
+]
+},
+"po_k0_snr_rule_w0.02": {
+"po_k0_snr_rule_w0.02": [
+77.12,
+77.19,
+0.0053,
+11.49,
+2.0
+]
+},
+"po_k0_snr_rule_w0.035": {
+"po_k0_snr_rule_w0.035": [
+82.87,
+82.95,
+0.0001,
+10.97,
+3.5
+]
+},
+"po_k1_gain_tracking": {
+"po_k1_gain_tracking": [
+89.71,
+89.75,
+0.0,
+11.46,
+3.5
+]
+},
+"po_k1_snr_rule_w0.02": {
+"po_k1_snr_rule_w0.02": [
+77.19,
+77.26,
+0.005,
+11.51,
+2.0
+]
+},
+"po_k1_snr_rule_w0.035": {
+"po_k1_snr_rule_w0.035": [
+82.9,
+82.97,
+0.0001,
+10.99,
+3.5
+]
+},
+"po_k3_gain_tracking": {
+"po_k3_gain_tracking": [
+88.93,
+88.95,
+0.0,
+11.75,
+3.5
+]
+},
+"po_k3_snr_rule_w0.02": {
+"po_k3_snr_rule_w0.02": [
+77.26,
+77.34,
+0.0054,
+11.54,
+2.0
+]
+},
+"po_k3_snr_rule_w0.035": {
+"po_k3_snr_rule_w0.035": [
+82.93,
+83.01,
+0.0001,
+11.04,
+3.5
+]
+},
+"rule_w0.02": {
+"rule_w0.02": [
+82.99,
+83.07,
+0.0,
+12.72,
+2.0
+]
+},
+"rule_w0.035": {
+"rule_w0.035": [
+85.68,
+85.74,
+0.0,
+12.51,
+3.5
+]
+},
+"full_PPO_final": {
+"full_PPO_final": [
+85.37,
+86.33,
+0.0,
+11.76,
+2.68
+]
+},
+"full_PPO_best": {
+"full_PPO_best": [
+85.58,
+86.53,
+0.0,
+11.77,
+2.75
+]
+},
+"full_TD3_final": {
+"full_TD3_final": [
+74.98,
+76.36,
+0.0931,
+11.39,
+2.73
+]
+},
+"full_TD3_best": {
+"full_TD3_best": [
+89.92,
+89.93,
+0.0,
+11.49,
+3.41
+]
+}
+}
+== original
+   {'comparison': 'TD3 vs Fixed', 'diff': 2.84835, 'diff_ci': (-2.2303981249243967, 7.031473539556381), 't': 1.13917, 'p_t': 0.28404, 'W': 18.0, 'p_w': 0.375, 'higher': 8, 'p_t_holm': 1.0, 'p_w_holm': 1.0}
+   {'comparison': 'TD3 vs Random', 'diff': 10.0585, 'diff_ci': (4.993436824782402, 14.215961533424297), 't': 4.03507, 'p_t': 0.00295, 'W': 3.0, 'p_w': 0.00977, 'higher': 8, 'p_t_holm': 0.0236, 'p_w_holm': 0.06836}
+   {'comparison': 'TD3 vs Rule-based', 'diff': -10.86197, 'diff_ci': (-16.116729414668658, -6.570834227145795), 't': -4.2252, 'p_t': 0.00222, 'W': 0.0, 'p_w': 0.00195, 'higher': 0, 'p_t_holm': 0.02, 'p_w_holm': 0.02344}
+   {'comparison': 'SAC vs Fixed', 'diff': 6.98092, 'diff_ci': (4.467942474834428, 9.8005694410432), 't': 4.83394, 'p_t': 0.00093, 'W': 0.0, 'p_w': 0.00195, 'higher': 10, 'p_t_holm': 0.01022, 'p_w_holm': 0.02344}
+   {'comparison': 'SAC vs Random', 'diff': 14.19107, 'diff_ci': (11.5609876142323, 17.124618565717924), 't': 9.42741, 'p_t': 1e-05, 'W': 0.0, 'p_w': 0.00195, 'higher': 10, 'p_t_holm': 7e-05, 'p_w_holm': 0.02344}
+   {'comparison': 'SAC vs Rule-based', 'diff': -6.7294, 'diff_ci': (-9.292713514165976, -4.044432496176224), 't': -4.73016, 'p_t': 0.00107, 'W': 2.0, 'p_w': 0.00586, 'higher': 1, 'p_t_holm': 0.01074, 'p_w_holm': 0.04688}
+   {'comparison': 'PPO vs Fixed', 'diff': 3.04522, 'diff_ci': (-4.986306780201688, 7.914098364876075), 't': 0.79271, 'p_t': 0.44834, 'W': 10.0, 'p_w': 0.08398, 'higher': 9, 'p_t_holm': 1.0, 'p_w_holm': 0.50391}
+   {'comparison': 'PPO vs Random', 'diff': 10.25537, 'diff_ci': (2.2931772187818114, 15.209479876018873), 't': 2.70351, 'p_t': 0.02425, 'W': 10.0, 'p_w': 0.08398, 'higher': 9, 'p_t_holm': 0.14552, 'p_w_holm': 0.50391}
+   {'comparison': 'PPO vs Rule-based', 'diff': -10.6651, 'diff_ci': (-18.55786962307834, -5.622560773946745), 't': -2.83958, 'p_t': 0.01942, 'W': 0.0, 'p_w': 0.00195, 'higher': 0, 'p_t_holm': 0.13591, 'p_w_holm': 0.02344}
+   {'comparison': 'SAC vs TD3', 'diff': 4.13257, 'diff_ci': (-0.9499286118570568, 10.342528315885087), 't': 1.34628, 'p_t': 0.21114, 'W': 17.0, 'p_w': 0.32227, 'higher': 7, 'p_t_holm': 1.0, 'p_w_holm': 1.0}
+   {'comparison': 'SAC vs PPO', 'diff': 3.9357, 'diff_ci': (-1.7794769651340971, 12.438724037378076), 't': 0.97124, 'p_t': 0.3568, 'W': 22.0, 'p_w': 0.625, 'higher': 5, 'p_t_holm': 1.0, 'p_w_holm': 1.0}
+   {'comparison': 'TD3 vs PPO', 'diff': -0.19687, 'diff_ci': (-7.690797902426212, 9.042045741771087), 't': -0.04341, 'p_t': 0.96632, 'W': 22.0, 'p_w': 0.625, 'higher': 4, 'p_t_holm': 1.0, 'p_w_holm': 1.0}
+== original_welch
+   {'comparison': 'TD3 vs Fixed', 'diff': 2.84835, 't': 1.08197, 'df': 9.40201, 'p': 0.30623, 'higher': 8, 'p_holm': 1.0}
+   {'comparison': 'TD3 vs Random', 'diff': 10.0585, 't': 3.83926, 'df': 9.22577, 'p': 0.00379, 'higher': 8, 'p_holm': 0.03034}
+   {'comparison': 'TD3 vs Rule-based', 'diff': -10.86197, 't': -4.16589, 'df': 9.05172, 'p': 0.0024, 'higher': 0, 'p_holm': 0.02157}
+   {'comparison': 'SAC vs Fixed', 'diff': 6.98092, 't': 4.71512, 'df': 10.32886, 'p': 0.00075, 'higher': 10, 'p_holm': 0.00828}
+   {'comparison': 'SAC vs Random', 'diff': 14.19107, 't': 9.7337, 'df': 9.74886, 'p': 0.0, 'higher': 10, 'p_holm': 3e-05}
+   {'comparison': 'SAC vs Rule-based', 'diff': -6.7294, 't': -4.68859, 'df': 9.17179, 'p': 0.00108, 'higher': 1, 'p_holm': 0.01082}
+   {'comparison': 'PPO vs Fixed', 'diff': 3.04522, 't': 0.81865, 'df': 9.1992, 'p': 0.43368, 'higher': 9, 'p_holm': 1.0}
+   {'comparison': 'PPO vs Random', 'diff': 10.25537, 't': 2.7636, 'df': 9.11185, 'p': 0.02174, 'higher': 9, 'p_holm': 0.13042}
+   {'comparison': 'PPO vs Rule-based', 'diff': -10.6651, 't': -2.88088, 'df': 9.02562, 'p': 0.0181, 'higher': 0, 'p_holm': 0.1267}
+   {'comparison': 'SAC vs TD3', 'diff': 4.13257, 't': 1.39156, 'df': 13.96809, 'p': 0.18582, 'higher': 7, 'p_holm': 0.92911}
+   {'comparison': 'SAC vs PPO', 'diff': 3.9357, 't': 0.99246, 'df': 11.62544, 'p': 0.34118, 'higher': 5, 'p_holm': 1.0}
+   {'comparison': 'TD3 vs PPO', 'diff': -0.19687, 't': -0.04352, 'df': 16.15936, 'p': 0.96582, 'higher': 4, 'p_holm': 1.0}
+{
+"full_PPO": {
+"best_val_episode": [
+950,
+950,
+1000,
+1000,
+650,
+1000,
+1000,
+1000,
+900,
+950
+],
+"train_last50": 84.05094647999998,
+"train_first50": 70.77740247400001,
+"wall_seconds": 837.2028694152832
+},
+"full_TD3": {
+"best_val_episode": [
+100,
+50,
+100,
+100,
+100,
+100,
+100,
+50,
+50,
+100
+],
+"train_last50": 76.37998243400001,
+"train_first50": 84.49241347799999,
+"wall_seconds": 19395.088034152985
+}
+}
